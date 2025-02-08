@@ -3,7 +3,7 @@ module ALU(
     output [18:0] Result,
     input [4:0] ALUControl
     output Negative
-)
+);
 
 assign Sum = A + B;
 assign Diff = A - B;
