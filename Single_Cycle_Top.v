@@ -12,10 +12,16 @@
 module Single_Cycle_Top(
     input rst,
     input clk
-)
+);
+wire [18:0] PC;
+wire [18:0] PC_Next;
+wire [18:0] PC_Plus1;
+
+PC_Module PC_Mod(.clk(clk), .rst(rst), .PC(PC), .PC_Next(PC_Next));
+PC_Adder PC_Add(.a(PC), .b(19'd1), .c(PC_Plus1));
 
 wire [18:0] Instr;
-Instruction_Memory IM(.rst(rst), .A(PC), .RD(Instr))
+Instruction_Memory IM(.rst(rst), .A(PC), .RD(Instr));
 
 wire [2:0] reg_rd, reg_rs1, reg_rs2;
 wire [4:0] funct5;
@@ -41,16 +47,60 @@ assign reg_rs1 = (isR || isI) ? Instr[10:8] : ((isS || isBEQ || isBNE) ? Instr[1
 assign reg_rs2 = isR ? Instr[7:5] : ((isS || isBEQ || isBNE) ? Instr[10:8]: 3'd0);
 assign funct5 = isR ? Instr[4:0];
 
+wire [18:0] RD1, RD2;
 Register_File RF(
     .clk(clk),
     .rst(rst),
-    .WE3(),
-    .WD3(),
-    .A1(),
-    .A2(),
-    .A3(),
-    .RD1(),
-    .RD2()
+    .WE3(RegWrite),
+    .WD3(Result),
+    .A1(reg_rs1),
+    .A2(reg_rs2),
+    .A3(reg_rd),
+    .RD1(RD1),
+    .RD2(RD2)
+);
+
+// Main Decoder
+wire RegWrite, ALUSrc, MemWrite, ResultSrc, Branch, Jump, Call, Ret;
+wire [1:0] ImmSrc, ALUOp;
+Main_Decoder MD(
+    .Op(opcode),
+    .RegWrite(RegWrite),
+    .ALUSrc(ALUSrc),
+    .MemWrite(MemWrite),
+    .ResultSrc(ResultSrc),
+    .Branch(Branch),
+    .Jump(Jump),
+    .Call(Call),
+    .Ret(Ret),
+    .ImmSrc(ImmSrc),
+    .ALUOp(ALUOp)
+);
+
+// ALU Decoder
+
+wire [4:0] effective_funct;
+assign effective_funct = isR ? funct5 : 5'b00000;
+wire [4:0] ALUControl;
+ALU_Decoder AD(
+    .ALUOp(ALUOp),
+    .funct5(),
+    .ALUControl(ALUControl)
+);
+
+// Sign Extension - I/S/Branch immediate
+wire [18:0] imm_extended;
+Sign_Extend SE(
+    .imm_in(imm_field),
+    .imm_out(imm_extended)
+);
+
+wire [18:0] alu_in2
+Mux Mux_ALU(
+    .a(RD2),
+    .b(imm_extended),
+    .s(ALUSrc),
+    .c(alu_in2)
 )
 
 endmodule
