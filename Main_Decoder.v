@@ -18,7 +18,7 @@ reg [1:0] alu_op;
 
 
 always @(*) begin
-    case(op)
+    case(Op)
         5'b00000: begin // R type instructions
             regwrite=1; 
             alusrc=0;

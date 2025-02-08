@@ -1,10 +1,14 @@
 module ALU(
-    input [18:0] A
+    input [18:0] A,
     input [18:0] B,
     output [18:0] Result,
-    input [4:0] ALUControl
+    input [4:0] ALUControl,
     output Negative
 );
+
+wire [18:0] Sum, Diff, Prod, Quot;
+wire [37:0] mult_full;
+wire [18:0] AndOp, OrOp, XorOp, NotOp, Inc, Dec;
 
 assign Sum = A + B;
 assign Diff = A - B;
@@ -32,8 +36,8 @@ assign Result = (ALUControl == 5'b00000)? Sum:
                 (ALUControl == 5'b01010)? 19'd0: // FFt
                 (ALUControl == 5'b01011)? 19'd0: //Encrypt
                 (ALUControl == 5'b01100)? 19'd0: //Decrypt
-                19'd0
+                19'd0;
+assign Negative = Result[18];
 
 endmodule
 
-assign Negative = Result[18];

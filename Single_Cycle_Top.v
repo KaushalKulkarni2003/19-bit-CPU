@@ -14,7 +14,7 @@ module Single_Cycle_Top(
     input clk
 );
 wire [18:0] PC;
-wire [18:0] PC_Next;
+reg [18:0] PC_Next;
 wire [18:0] PC_Plus1;
 
 PC_Module PC_Mod(.clk(clk), .rst(rst), .PC(PC), .PC_Next(PC_Next));
@@ -32,20 +32,20 @@ wire [13:0] jump_imm;
 wire [4:0] opcode;
 assign opcode = Instr[18:14];
 // Instruction Flags
-wire isR = (opcode = 5'b00000)
-wire isI = (opcode = 5'b00001)
-wire isS = (opcode = 5'b00010)
-wire isBEQ = (opcode = 5'b00011)
-wire isBNE = (opcode = 5'b00100)
-wire isJMP = (opcode = 5'b00101)
-wire isCALL = (opcode = 5'b00110)
-wire isRET = (opcode = 5'b00111)
+wire isR = (opcode == 5'b00000);
+wire isI = (opcode == 5'b00001);
+wire isS = (opcode == 5'b00010);
+wire isBEQ = (opcode == 5'b00011);
+wire isBNE = (opcode == 5'b00100);
+wire isJMP = (opcode == 5'b00101);
+wire isCALL = (opcode == 5'b00110);
+wire isRET = (opcode == 5'b00111);
 
 assign imm_field = (!isR && !isJMP && !isCALL && !isRET) ? Instr[7:0] : 8'd0;
 assign reg_rd = isR? Instr[13:11] : (isI ? Instr[13:11]: 3'd0);
 assign reg_rs1 = (isR || isI) ? Instr[10:8] : ((isS || isBEQ || isBNE) ? Instr[13:11]: 3'd0);
 assign reg_rs2 = isR ? Instr[7:5] : ((isS || isBEQ || isBNE) ? Instr[10:8]: 3'd0);
-assign funct5 = isR ? Instr[4:0];
+assign funct5 = isR ? Instr[4:0] : 5'b00000;
 
 // Register File
 wire [18:0] RD1, RD2;
@@ -95,7 +95,7 @@ Sign_Extend SE(
     .imm_out(imm_extended)
 );
 
-wire [18:0] alu_in2
+wire [18:0] alu_in2;
 Mux Mux_ALU(
     .a(RD2),
     .b(imm_extended),
@@ -109,7 +109,7 @@ ALU ALU_inst(
     .A(RD1),
     .B(alu_in2),
     .Result(ALU_Result),
-    .ALUControl(ALUControl)
+    .ALUControl(ALUControl),
     .Negative()
 );
 
@@ -134,7 +134,7 @@ Mux Mux_Result(
 );
 
 // PC Modules
-wire [18:0] branch_target
+wire [18:0] branch_target;
 PC_Adder PC_Branch(.a(PC), .b(imm_extended), .c(branch_target));
 
 // Jump Target result for JMP/CALL
@@ -144,5 +144,42 @@ assign jump_target = {5'd0, jump_imm};
 // Branch conditions
 wire branch_taken;
 assign branch_taken = (isBEQ && (RD1 == RD2) || (isBNE && (RD1 != RD2)));
+
+// Call stack for CALL and RET values
+reg [18:0] call_stack [0:15];
+reg [3:0] sp;
+integer i;
+
+always @(posedge clk) begin
+    if(!rst) begin
+        sp<=0;
+        for( i=0; i < 16; i = i + 1)
+            call_stack[i] <= 19'd0;
+    end else begin
+        if (isCALL) begin
+            call_stack[sp] <= PC_Plus1;
+            sp<= sp+1;
+        end else if (isRET) begin
+            sp <= sp-1;
+        end
+    end
+end
+
+// PC MUX Next
+reg [18:0] next_PC;
+always @(*) begin
+    if(isRET)
+        next_PC = call_stack[sp-1];
+    else if (isCALL || isJMP)
+        next_PC = jump_target;
+    else if (isBEQ || isBNE)
+        next_PC = branch_taken? branch_taken : PC_Plus1;
+    else
+        next_PC = PC_Plus1;
+end
+
+always @(*) begin
+    PC_Next = next_PC;
+end
 
 endmodule

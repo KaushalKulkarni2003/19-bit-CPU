@@ -10,7 +10,7 @@ module Register_File(
     output [18:0] RD2
 );
 
-reg [18:0] Register [0:7]
+reg [18:0] Register [0:7];
 always @(posedge clk) begin
     if(WE3)
         Register[A3] <= WD3;
