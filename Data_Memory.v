@@ -2,7 +2,8 @@ module Data_Memory(
     input clk,
     input rst,
     input WE,
-    input [18:0] WD,A,
+    input [18:0] WD,
+    input [18:0] A,
     output [18:0] RD
 );
 

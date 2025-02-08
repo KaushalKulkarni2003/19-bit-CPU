@@ -47,6 +47,7 @@ assign reg_rs1 = (isR || isI) ? Instr[10:8] : ((isS || isBEQ || isBNE) ? Instr[1
 assign reg_rs2 = isR ? Instr[7:5] : ((isS || isBEQ || isBNE) ? Instr[10:8]: 3'd0);
 assign funct5 = isR ? Instr[4:0];
 
+// Register File
 wire [18:0] RD1, RD2;
 Register_File RF(
     .clk(clk),
@@ -78,7 +79,6 @@ Main_Decoder MD(
 );
 
 // ALU Decoder
-
 wire [4:0] effective_funct;
 assign effective_funct = isR ? funct5 : 5'b00000;
 wire [4:0] ALUControl;
@@ -101,6 +101,48 @@ Mux Mux_ALU(
     .b(imm_extended),
     .s(ALUSrc),
     .c(alu_in2)
-)
+);
+
+// ALU
+wire [18:0] ALU_Result;
+ALU ALU_inst(
+    .A(RD1),
+    .B(alu_in2),
+    .Result(ALU_Result),
+    .ALUControl(ALUControl)
+    .Negative()
+);
+
+// Data memory
+wire [18:0] Mem_Read;
+Data_Memory DM(
+    .clk(clk),
+    .rst(rst),
+    .WE(MemWrite),
+    .WD(RD2),
+    .A(ALU_Result),
+    .RD(Mem_Read)
+);
+
+// Write Back Multiplexer
+wire [18:0] Result;
+Mux Mux_Result(
+    .a(ALU_Result),
+    .b(Mem_Read),
+    .s(ResultSrc),
+    .c(Result)
+);
+
+// PC Modules
+wire [18:0] branch_target
+PC_Adder PC_Branch(.a(PC), .b(imm_extended), .c(branch_target));
+
+// Jump Target result for JMP/CALL
+wire [18:0] jump_target;
+assign jump_target = {5'd0, jump_imm};
+
+// Branch conditions
+wire branch_taken;
+assign branch_taken = (isBEQ && (RD1 == RD2) || (isBNE && (RD1 != RD2)));
 
 endmodule

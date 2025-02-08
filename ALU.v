@@ -1,5 +1,6 @@
 module ALU(
-    input [18:0] A,B,
+    input [18:0] A
+    input [18:0] B,
     output [18:0] Result,
     input [4:0] ALUControl
     output Negative
