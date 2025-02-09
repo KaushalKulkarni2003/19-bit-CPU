@@ -111,7 +111,7 @@ always @(*) begin
         end
 
         5'b00111: begin // Ret type instructions
-            regwrite=1; 
+            regwrite=0; 
             alusrc=0;
             memwrite=0;
             resultsrc=0;

@@ -2,7 +2,7 @@
 `include "Main_Decoder.v"
 
 module Control_Unit_Top(
-    input [4:0] Op,
+    input [3:0] Op,
     input [4:0] funct5,
     output RegWrite,
     output ALUSrc,
@@ -13,7 +13,7 @@ module Control_Unit_Top(
     output Call,
     output Ret,
     output [1:0] ImmSrc,
-    output [1:0] ALUOp
+    output [4:0] ALUControl
 );
 
     wire [1:0] ALUOp;
@@ -33,7 +33,7 @@ module Control_Unit_Top(
 
     ALU_Decoder AD(
     ALUOp(ALUOp),
-    funct5(funct5),
+    funct7(funct5),
     ALUControl(ALUControl)
     )
 

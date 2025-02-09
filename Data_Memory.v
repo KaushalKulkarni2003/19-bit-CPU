@@ -15,4 +15,8 @@ end
 
 assign RD = (!rst) ? 19'd0 : mem[A];
 
+initial begin
+    mem[30] = 19'd99;
+end
+
 endmodule

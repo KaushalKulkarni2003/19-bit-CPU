@@ -19,4 +19,12 @@ end
 assign RD1 = (!rst) ? 19'd0 : Register[A1];
 assign RD2 = (!rst) ? 19'd0 : Register[A2];
 
+initial begin
+    Register[2] = 19'd5;
+    Register[3] = 19'd3;
+    Register[5] = 19'd20;
+    Register[7] = 19'd40;
+    Register[6] = 19'd77;
+end
+
 endmodule
